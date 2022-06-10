@@ -1,3 +1,5 @@
+import math
+#
 class IpDatagram:
     def __init__(self,totalLength,headerLen,offset,id):
         self.totalLength = totalLength
@@ -104,18 +106,26 @@ print(f'Sending datapackets from {source}\n')
 for i in range(len(path)-1):
     fragmentedDataPackets=[]
     mtu=graph[path[i]][path[i+1]]["mtu"]
-    off=0
-    for dg in dataPackets:
-        for i in range((dg.totalLength-dg.headerLen)//(mtu-dg.headerLen)+1):
-            if mtu*(i+1)<dg.totalLength:
-                fragmentedDataPackets.append(IpDatagram(mtu,dg.headerLen,mtu*i,f'P{i}'))
-            else:
-                fragmentedDataPackets.append(IpDatagram(dg.totalLength-mtu*i,dg.headerLen,mtu*i,f'P{i}'))
-    dg=fragmentedDataPackets
-
-for dg in fragmentedDataPackets:
-    print(dg)
+    # print(mtu)
+    pCount=0
+    for j,dp in enumerate(dataPackets):
+        fCount=(dp.totalLength-dp.headerLen)/(mtu-dp.headerLen)
+        fCount=int(math.ceil(fCount))
+        for k in range(fCount):
+            fdg=IpDatagram(mtu if (mtu-dp.headerLen)*(k+1)<dp.totalLength else dp.totalLength-(mtu-dp.headerLen)*(k),dp.headerLen,mtu*k,f'P{pCount}')
+            fragmentedDataPackets.append(fdg)
+            pCount+=1
+            
+    dataPackets=fragmentedDataPackets
+    
+    print(f'AT ROUTER {path[i+1]}')
     print()
+    for i in dataPackets:
+        print(i)
+        print()
+    
+
+
 print(f'Recieved packets at {dest}\n')
 pathPrint=' -> '.join(path)
 print(f'THE SHORTEST PATH IS : [{pathPrint}] for all fragments')
